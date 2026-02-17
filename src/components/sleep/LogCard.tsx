@@ -6,7 +6,10 @@ import RatingSelector from './RatingSelector';
 import { SleepLog, SYMPTOMS, AIDS, QUALITY_OPTIONS, WAKING_OPTIONS } from '@/types/sleep';
 import { calcTotalMinutes, formatMinutes, getTodayStr } from '@/utils/timeUtils';
 import { calculateScore } from '@/utils/sleepScore';
-import { saveLog, generateId } from '@/utils/sleepStorage';
+import { getUserId } from '@/lib/auth';
+import { saveSleepLog } from '@/lib/db';
+import { generateId } from '@/utils/sleepStorage';
+import { toast } from 'sonner';
 
 interface LogCardProps {
   onSave: (log: SleepLog) => void;
@@ -23,11 +26,18 @@ const LogCard = ({ onSave }: LogCardProps) => {
   const [wakeFeeling, setWakeFeeling] = useState(0);
   const [notes, setNotes] = useState('');
   const [showToast, setShowToast] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const totalMinutes = calcTotalMinutes(bedtime, wakeTime);
   const actualMinutes = Math.max(0, totalMinutes - wakeDuration);
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    const userId = getUserId();
+    if (!userId) {
+      toast.error('User session not found');
+      return;
+    }
+    setSaving(true);
     const symptomCount = symptoms.filter(s => s !== 'None').length;
     const score = calculateScore(actualMinutes, quality || 3, wakeUps, symptomCount);
 
@@ -48,22 +58,28 @@ const LogCard = ({ onSave }: LogCardProps) => {
       score,
     };
 
-    saveLog(log);
-    onSave(log);
+    try {
+      await saveSleepLog(userId, log);
+      onSave(log);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 2500);
 
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 2500);
-
-    // Reset
-    setBedtime('23:00');
-    setWakeTime('07:00');
-    setQuality(0);
-    setWakeUps(0);
-    setWakeDuration(0);
-    setSymptoms([]);
-    setAids([]);
-    setWakeFeeling(0);
-    setNotes('');
+      // Reset
+      setBedtime('23:00');
+      setWakeTime('07:00');
+      setQuality(0);
+      setWakeUps(0);
+      setWakeDuration(0);
+      setSymptoms([]);
+      setAids([]);
+      setWakeFeeling(0);
+      setNotes('');
+    } catch (error) {
+      console.error('Failed to save sleep log:', error);
+      toast.error('Failed to save entry');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (

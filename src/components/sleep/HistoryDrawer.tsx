@@ -3,7 +3,6 @@ import { X, Search, Download } from 'lucide-react';
 import { SleepLog } from '@/types/sleep';
 import { formatMinutes, formatDateFull, formatDateDDMM, getDayLabel } from '@/utils/timeUtils';
 import { getScoreBand, getScoreColor } from '@/utils/sleepScore';
-import { removeLog } from '@/utils/sleepStorage';
 
 interface HistoryDrawerProps {
   open: boolean;
@@ -35,7 +34,6 @@ const HistoryDrawer = ({ open, onClose, logs, onRemove }: HistoryDrawerProps) =>
     : logs;
 
   const handleRemove = (id: string) => {
-    removeLog(id);
     onRemove(id);
   };
 

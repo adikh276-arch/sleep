@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { SleepLog } from '@/types/sleep';
 import { formatMinutes, formatDateDDMM } from '@/utils/timeUtils';
 import { getScoreBand } from '@/utils/sleepScore';
-import { removeLog } from '@/utils/sleepStorage';
 
 interface RecentEntriesProps {
   logs: SleepLog[];
@@ -17,7 +16,6 @@ const RecentEntries = ({ logs, onRemove, onViewAll }: RecentEntriesProps) => {
   if (recent.length === 0) return null;
 
   const handleRemove = (id: string) => {
-    removeLog(id);
     onRemove(id);
     setSwipedId(null);
   };
